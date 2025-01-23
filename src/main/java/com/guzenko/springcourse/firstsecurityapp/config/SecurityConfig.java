@@ -1,23 +1,40 @@
 package com.guzenko.springcourse.firstsecurityapp.config;
 
-import com.guzenko.springcourse.firstsecurityapp.security.AuthProviderImpl;
+import com.guzenko.springcourse.firstsecurityapp.services.PersonDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
+@Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfiguration {
+public class SecurityConfig {
 
-    private final AuthProviderImpl authProvider;
+    private final PersonDetailsService personDetailsService;
 
     @Autowired
-    public SecurityConfig(AuthProviderImpl authProvider) {
-        this.authProvider = authProvider;
+    public SecurityConfig(PersonDetailsService personDetailsService) {
+        this.personDetailsService = personDetailsService;
     }
 
-    //Настраивает аутентификацию
-    protected void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(authProvider);
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().authenticated()
+                )
+                .formLogin(Customizer.withDefaults())
+                .userDetailsService(personDetailsService);
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder getPasswordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
     }
 }
